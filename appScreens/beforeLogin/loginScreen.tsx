@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
@@ -9,12 +10,60 @@ import {
 } from 'react-native';
 import { TextInput, Button, Card } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { authService } from '../../services/apiService';
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+}
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [secureText, setSecureText] = useState(true);
+  const [errors, setError] = useState<FormErrors>({});
+  const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+
+  const validateForm = () => {
+    let err: FormErrors = {};
+
+    if (!email) err.email = 'Email is required.';
+    if (!password) err.password = 'Password is required.';
+
+    setError(err);
+
+    return Object.keys(err).length === 0;
+  };
+
+  const handleFormSubmit = async () => {
+    console.log('validateform()', validateForm());
+    if (validateForm()) {
+      try {
+        setLoading(true);
+        await new Promise(resolve => setTimeout(() => resolve(null), 2000));
+        const user = authService.login(email, password);
+        console.log('user=>', user);
+        setEmail('');
+        setPassword('');
+        setError({});
+        navigation.reset({
+          index: 0, //Deletes the stack so the remaining screen is the home screen so no back button in header
+          routes: [{ name: 'Home' }],
+        });
+      } catch (error) {
+        console.log('error=>', error);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      console.log(errors);
+      console.log(email);
+      console.log(password);
+    }
+  };
+
+  // if (loading) return <Loader />;
 
   return (
     // KeyboardAvoidingView ensures the keyboard doesn't cover your inputs
@@ -39,6 +88,9 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
               />
+              {errors.email ? (
+                <Text style={styles.errorMsg}>{errors.email}</Text>
+              ) : null}
 
               <TextInput
                 label="Password"
@@ -54,14 +106,19 @@ export default function LoginScreen() {
                   />
                 }
               />
+              {errors.password ? (
+                <Text style={styles.errorMsg}>{errors.password}</Text>
+              ) : null}
 
               <Button
                 mode="contained"
-                onPress={() => navigation.navigate('Pokemons')}
+                onPress={() => handleFormSubmit()}
                 style={styles.button}
                 contentStyle={styles.buttonContent}
+                loading={loading}
+                disabled={loading}
               >
-                Login
+                {loading ? 'Logging in...' : 'Login'}
               </Button>
             </Card.Content>
           </Card>
@@ -74,7 +131,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f2f5', // Light grey background like modern apps
+    backgroundColor: '#f0f2f5',
   },
   innerContainer: {
     flex: 1,
@@ -86,8 +143,8 @@ const styles = StyleSheet.create({
     width: '100%', // Takes up the available space within the padding
     maxWidth: 400, // Optional: keeps it from looking too wide on tablets
     borderRadius: 12,
-    elevation: 4, // Shadow for Android
-    shadowColor: '#000', // Shadow for iOS
+    elevation: 4,
+    shadowColor: '#000',
     shadowOffset: { width: 3, height: 2 },
     shadowOpacity: 0.5,
     shadowRadius: 8,
@@ -107,5 +164,8 @@ const styles = StyleSheet.create({
   },
   buttonContent: {
     paddingVertical: 6,
+  },
+  errorMsg: {
+    color: 'red',
   },
 });
