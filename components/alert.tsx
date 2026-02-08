@@ -1,7 +1,7 @@
 import { Alert } from 'react-native';
 
 export const AlertComp = {
-  logoutAlert: (navigation: any) => {
+  logoutAlert: ({ onConfirm }: any) => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
       {
         text: 'Cancel',
@@ -10,12 +10,7 @@ export const AlertComp = {
       {
         text: 'OK',
         style: 'destructive',
-        onPress: () => {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-        },
+        onPress: () => onConfirm(),
       },
     ]);
   },

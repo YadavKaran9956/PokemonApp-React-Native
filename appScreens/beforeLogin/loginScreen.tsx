@@ -11,6 +11,9 @@ import {
 import { TextInput, Button, Card } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { authService } from '../../services/apiService';
+import { storageService } from '../../services/storageService';
+import { useDispatch } from 'react-redux';
+import { loginSuccess } from '../../reduxStore/slices/authSlice';
 
 interface FormErrors {
   email?: string;
@@ -23,7 +26,7 @@ export default function LoginScreen() {
   const [secureText, setSecureText] = useState(true);
   const [errors, setError] = useState<FormErrors>({});
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
+  const dispatch = useDispatch();
 
   const validateForm = () => {
     let err: FormErrors = {};
@@ -42,14 +45,18 @@ export default function LoginScreen() {
       try {
         setLoading(true);
         await new Promise(resolve => setTimeout(() => resolve(null), 2000));
-        const user = authService.login(email, password);
-        console.log('user=>', user);
-        setEmail('');
-        setPassword('');
-        setError({});
-        navigation.reset({
-          index: 0, //Deletes the stack so the remaining screen is the home screen so no back button in header
-          routes: [{ name: 'Home' }],
+        authService.login(email, password).then(user => {
+          console.log('user=>', user);
+          const res = storageService.setCredentials(
+            user.username,
+            user.accessToken,
+            'loggedUser',
+          );
+          console.log('res=>', res);
+          setEmail('');
+          setPassword('');
+          setError({});
+          dispatch(loginSuccess(user));
         });
       } catch (error) {
         console.log('error=>', error);
@@ -62,8 +69,6 @@ export default function LoginScreen() {
       console.log(password);
     }
   };
-
-  // if (loading) return <Loader />;
 
   return (
     // KeyboardAvoidingView ensures the keyboard doesn't cover your inputs

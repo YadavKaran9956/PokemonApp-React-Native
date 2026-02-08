@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, FlatList } from 'react-native';
 import { List, Avatar } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
 import { pokemonService } from '../../services/apiService';
 import SearchBar from '../../components/searchBar';
 import Loader from '../../components/loader';
+import { useSelector } from 'react-redux';
 
 interface Pokemon {
   name: string;
@@ -15,10 +15,11 @@ export default function HomeScreen() {
   const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const isAuthLoading = useSelector((state: any) => state.auth.isAuthLoading);
   useEffect(() => {
     loadPokeList();
+    console.log('at home page', isAuthLoading);
   }, []);
-  const navigation = useNavigation();
 
   const loadPokeList = async () => {
     try {
@@ -65,7 +66,8 @@ export default function HomeScreen() {
               </View>
             )}
             onPress={() =>
-              navigation.navigate('PokemonDetails', { url: item.url })
+              // navigation.navigate('PokemonDetails', { url: item.url })
+              console.log('hello')
             }
             titleStyle={styles.title}
           />

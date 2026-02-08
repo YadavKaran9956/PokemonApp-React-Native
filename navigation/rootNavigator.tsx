@@ -1,58 +1,28 @@
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import HomeScreen from '../appScreens/afterLogin/homeScreen';
-import LoginScreen from '../appScreens/beforeLogin/loginScreen';
-import PokemonDetails from '../appScreens/afterLogin/pokemonDetails';
-import { IconButton } from 'react-native-paper';
-import { AlertComp } from '../components/alert';
-
-// Here, I am defining all the screens of my project.
-// undefined is generally used on those screens through which no data is passing as param
-// but if I want to pass data as a param I will use ScreenName: { category: string } on the required screens.
-export type RootStackParamList = {
-  Login: undefined;
-  Home: undefined;
-  PokemonDetails: { url: string };
-};
-
-// Here, I am registering them globally right here.
-declare global {
-  namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
-  }
-}
-
-const Stack = createNativeStackNavigator();
+import { useSelector, useDispatch } from 'react-redux';
+import AppNavigator from './AppNavigator';
+import AuthNavigator from './AuthNavigator';
+import { storageService } from '../services/storageService';
+import { isAuthChecked, loginSuccess } from '../reduxStore/slices/authSlice';
+import { useEffect } from 'react';
 
 export default function RootNavigator() {
-  return (
-    <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen
-        name="Login"
-        component={LoginScreen}
-        options={{ headerShown: false }}
-      />
-      <Stack.Screen
-        name="Home"
-        component={HomeScreen}
-        options={({ navigation }) => ({
-          title: 'Pokemons',
-          headerBackButtonDisplayMode: 'minimal',
-          headerRight: () => (
-            <IconButton
-              icon="logout"
-              onPress={() => AlertComp.logoutAlert(navigation)}
-            />
-          ),
-        })}
-      />
-      <Stack.Screen
-        name="PokemonDetails"
-        component={PokemonDetails}
-        options={{
-          title: 'Pokemon Details',
-          headerBackButtonDisplayMode: 'minimal',
-        }}
-      />
-    </Stack.Navigator>
-  );
+  const { isLoggedin, isAuthLoading } = useSelector((state: any) => state.auth);
+
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    const bootstrapAuth = async () => {
+      const user = await storageService.getCredentials('loggedUser');
+      if (user) {
+        dispatch(loginSuccess(user));
+      } else {
+        dispatch(isAuthChecked());
+      }
+    };
+
+    bootstrapAuth();
+  }, []);
+  console.log('isAuthLoading', isAuthLoading);
+  if (isAuthLoading) return null;
+  return isLoggedin ? <AppNavigator /> : <AuthNavigator />;
 }
