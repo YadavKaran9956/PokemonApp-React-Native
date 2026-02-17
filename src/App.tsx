@@ -4,12 +4,14 @@ import RootNavigator from './navigation/rootNavigator';
 import { Provider } from 'react-redux';
 import { store } from './reduxStore/store';
 import { enableScreens } from 'react-native-screens';
+import ToastManager from 'toastify-react-native';
 enableScreens();
 
 export default function App() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
+        <ToastManager />
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>

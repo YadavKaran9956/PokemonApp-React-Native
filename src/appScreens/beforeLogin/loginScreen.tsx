@@ -9,11 +9,12 @@ import {
   Keyboard,
 } from 'react-native';
 import { TextInput, Button, Card } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
 import { authService } from '../../services/apiService';
 import { storageService } from '../../services/storageService';
 import { useDispatch } from 'react-redux';
 import { loginSuccess } from '../../reduxStore/slices/authSlice';
+import { Toaster } from '../../components/toast';
+import { isValidEmail } from '../../utils/validators';
 
 interface FormErrors {
   email?: string;
@@ -33,6 +34,9 @@ export default function LoginScreen() {
 
     if (!email) err.email = 'Email is required.';
     if (!password) err.password = 'Password is required.';
+    // if (email && !isValidEmail(email)) {
+    //   err.email = 'Email is not valid';
+    // }
 
     setError(err);
 
@@ -45,21 +49,22 @@ export default function LoginScreen() {
       try {
         setLoading(true);
         await new Promise(resolve => setTimeout(() => resolve(null), 2000));
-        authService.login(email, password).then(user => {
-          console.log('user=>', user);
-          const res = storageService.setCredentials(
-            user.username,
-            user.accessToken,
-            'loggedUser',
-          );
-          console.log('res=>', res);
-          setEmail('');
-          setPassword('');
-          setError({});
-          dispatch(loginSuccess(user));
-        });
-      } catch (error) {
-        console.log('error=>', error);
+        const user = await authService.login(email, password);
+        const res = storageService.setCredentials(
+          user.username,
+          user.accessToken,
+          'loggedUser',
+        );
+        console.log('res=>', res);
+        dispatch(loginSuccess(user));
+        setEmail('');
+        setPassword('');
+        setError({});
+      } catch (e: any) {
+        e.message == 'Network Error' ||
+        e.message == 'timeout of 5000ms exceeded'
+          ? Toaster.toastError(e.message)
+          : Toaster.toastError(e?.response?.data?.message);
       } finally {
         setLoading(false);
       }
